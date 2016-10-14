@@ -4,12 +4,17 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "livereload": "live-reload --port 8001 src/"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "bootstrap": "3.3.7",
+    "express": "4.14.0",
+    "jquery": "3.1.1",
+    "live-reload": "1.1.0",
+    "mysql": "2.11.1",
     "socket.io": "1.4.8"
   }
 }
