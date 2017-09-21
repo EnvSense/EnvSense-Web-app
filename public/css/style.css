@@ -1,0 +1,13 @@
+/*A customized css */
+
+.visual {
+
+}
+#airtemp {
+  width: auto;
+}
+#info {
+  width: auto;
+  height: 100px;
+  margin: 10px;
+}

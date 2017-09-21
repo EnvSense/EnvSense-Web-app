@@ -1,0 +1,15 @@
+/*A customized css */
+
+.visual {
+  width: auto;
+  height: 200px;
+  background-color: yellow;
+}
+#airtemp {
+  width: 500px;
+}
+#info {
+  width: auto;
+  height: 100px;
+  background: yellow;
+}

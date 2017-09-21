@@ -2,74 +2,155 @@
 
 <head>
 	<script src="/socket.io/socket.io.js"></script>
-	<link href="static/css/bootstrap.min.css" rel="stylesheet" />
+	<link href="static/css/bootstrap.min.css" rel="stylesheet" type="text/css" />
+	<link href="static/css/style.css" rel="stylesheet" type="text/css" />
+	<script type="text/javascript" src="static/js/libs/jquery.min.js"></script>
 	<script type="text/javascript" src="static/js/libs/canvasjs.min.js"></script>
+
 </head>
 
 <body>
 	<h1>Dashboard</h1>
+
+	<div id="info">
+		<p>
+			Next Update Count Down: <span id="updateCount"></span>
+		</p>
+		<p>
+			Last Update Time: <span id="lastUpdateTime"></span>
+		</p>
+	</div>
+
+	<div class='visual'>
+		<div id="airtemp"></div>
+		<div id="airmois"></div>
+		<div id="light"></div>
+		<div id="soilmois"></div>
+	</div>
+	</div>
 	<script>
-		var socket = io.connect('http://localhost:8080');
-		socket.on('news', function(data) {
-			console.log(data);
-			socket.emit('my other event', {
-				my: 'data'
-			});
-		});
+		// CanvasJS default Chart Drawing
+		var dps_airm = []; // dataPoints for moisture
+		var dps_airtemp = []; // dataPoints for Temperature
 
 		window.onload = function() {
+				// Canvas Configure
+				var xVal = 0;
+				var yVal = 100;
+				var updateInterval = 60000;
+				var dataLength = 1440; // number of dataPoints visible at any point
 
-			var dps = []; // dataPoints
+				//
+				// Air Temperature Chart initilization
+				//
 
-			var chart = new CanvasJS.Chart("chartContainer", {
-				title: {
-					text: "Live Random Data"
-				},
-				data: [{
-					type: "line",
-					dataPoints: dps
-				}]
-			});
+				var data = [];
+				var chart_airtemp = new CanvasJS.Chart("airtemp", {
+					title: {
+						text: "Air Temperature"
+					},
+					axisX: {
+						interval: 30,
+						intervalType: "minute",
+						labelAngle: 60
+					},
+					axisY: {
+						interval: 2
+					},
+					toolTip: {
+						animationEnabled: true,
+						enabled: true,
+						content: "test",
+						fontSize: 200
+					},
+					// data: data
+					data: [{
 
-			var xVal = 0;
-			var yVal = 100;
-			var updateInterval = 100;
-			var dataLength = 500; // number of dataPoints visible at any point
+						toolTipContent: "x: {x}, y: {y} ",
+						type: "line",
+						dataPoints: dps_airtemp
+					}]
+				});
+				//
+				// Air Moisture Chart initilization
+				//
+				var chart_airmois = new CanvasJS.Chart("airmois", {
+					title: {
+						text: "Air Moisture"
+					},
+					data: [{
+						type: "line",
+						dataPoints: dps_airm
+					}]
+				});
 
-			var updateChart = function(count) {
-				count = count || 1;
-				// count is number of times loop runs to generate random dataPoints.
+				// var dataSeries = { type: "line" };
 
-				for (var j = 0; j < count; j++) {
-					yVal = yVal + Math.round(5 + Math.random() * (-5 - 5));
-					dps.push({
-						x: xVal,
-						y: yVal
-					});
-					xVal++;
-				};
-				if (dps.length > dataLength) {
-					dps.shift();
+				//
+				/* Request Today and draw on Canvas in advance */
+				//
+
+				$.ajax({
+					type: 'POST',
+					url: 'http://140.114.71.114:16888/todaydata',
+
+					success: function(data) {
+
+						// console.log(data);
+						console.log('init chart_airtemp');
+						console.log('size of todaydata', Object.keys(data).length)
+
+						// Air Temperature Processing
+						for (var i = 0; i < Object.keys(data).length; i++) {
+							var dt = data[i].datetime.replace(".000Z", "");
+							dps_airtemp.push({
+								x: new Date(dt),
+								y: data[i].air_temperature,
+								toolTipContent: "x: {x}, y: {y} "
+							});
+						}
+						// Air Moisoture Processing
+						// for(var i=0;i<Object.keys(data).length;i++){
+						// 		dps_airmois.push({ 	x:i,
+						// 												y:data[i].air_moisture})
+						// }
+
+						if (dps_airtemp.length > dataLength) {
+							dps_airtemp.shift();
+						}
+						// dataSeries.dataPoints = dps_airtemp;
+						chart_airtemp.render();
+					}
+				});
+				// data.push(dataSeries);
+
+
+				var updateChart = function() {
+					// count is number of times loop runs to generate random dataPoints.
+
+					// generates first set of dataPoints
+					updateChart(dataLength);
+
+					// update chart after specified time.
+					setInterval(function() {
+						updateChart()
+					}, updateInterval);
 				}
+			}
+			/* Socket */
+		var socket = io.connect('http://140.114.71.114:16888');
 
-				chart.render();
+		console.log(socket);
+		socket.on('serverTime', function(data) {
+			console.log(data);
+			if (data.updateCount === 10) {
+				$('#lastUpdateTime').text(data.lastUpdateTime);
 
-			};
-
-			// generates first set of dataPoints
-			updateChart(dataLength);
-
-			// update chart after specified time.
-			setInterval(function() {
-				updateChart()
-			}, updateInterval);
-
-		}
+			}
+			$('#updateCount').text(data.updateCount);
+		});
 	</script>
-	<script type="text/javascript" src="static/js/libs/jquery.min.js"></script>
 	<script type="text/javascript" src="static/js/libs/bootstrap.min.js"></script>
-
-	<div id="chartContainer"></div>
 </body>
 
 </html>
